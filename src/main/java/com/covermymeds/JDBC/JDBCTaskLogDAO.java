@@ -1,5 +1,6 @@
 package com.covermymeds.JDBC;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,10 +57,14 @@ public class JDBCTaskLogDAO implements DAO<TaskLog> {
 
 	@Override
 	public void add(TaskLog taskLog) {
-		String sql = "INSERT INTO task_logs (task_id, user_id, duration_minutes) VALUES (?,?,?)";
+		String sql = "INSERT INTO task_logs (task_id, user_id, start_time, end_time) VALUES (?,?,?,?)";
 		foreignKeyValidator.validateTaskIdExists(taskLog.getTaskId());
 		foreignKeyValidator.validateUserIdExists(taskLog.getUserId());
-		jdbcTemplate.update(sql, taskLog.getTaskId(), taskLog.getUserId(), taskLog.getDurationInMinutes());		
+		if (taskLog.getStartTime() == null) {
+			taskLog.setStartTime(LocalDateTime.now());
+		}
+		jdbcTemplate.update(sql, taskLog.getTaskId(), taskLog.getUserId(), taskLog.getStartTime()
+				, taskLog.getEndTime());		
 	}
 	
 	public void add(TaskLog taskLog, String token) {
@@ -70,10 +75,22 @@ public class JDBCTaskLogDAO implements DAO<TaskLog> {
 
 	@Override
 	public void update(TaskLog taskLog) {
-		String sql = "UPDATE task_logs SET task_id = ?, user_id = ?, duration_minutes = ? WHERE id = ?";
+		String sql = "UPDATE task_logs SET task_id = ?, user_id = ?, start_time = ?, end_time = ? WHERE id = ?";
 		foreignKeyValidator.validateTaskIdExists(taskLog.getTaskId());
 		foreignKeyValidator.validateUserIdExists(taskLog.getUserId());
-		int numberOfRowsAffected = jdbcTemplate.update(sql, taskLog.getTaskId(), taskLog.getUserId(), taskLog.getDurationInMinutes(), taskLog.getId());
+		int numberOfRowsAffected = 0;
+		if (taskLog.getEndTime() == null) {
+			taskLog.setEndTime(LocalDateTime.now());
+		}
+		if (taskLog.getStartTime() == null) {
+			sql = "UPDATE task_logs SET task_id = ?, user_id = ?, end_time = ? WHERE id = ?";
+			numberOfRowsAffected = jdbcTemplate.update(sql, taskLog.getTaskId(), taskLog.getUserId(), 
+					taskLog.getEndTime(), taskLog.getId());
+		} else {
+			numberOfRowsAffected = jdbcTemplate.update(sql, taskLog.getTaskId(), taskLog.getUserId(), 
+					taskLog.getStartTime(), taskLog.getEndTime(), taskLog.getId());
+		}
+
 		if (numberOfRowsAffected == 0) {
 			throw new EntityNotFoundException("TaskLog", taskLog.getId());
 		}
@@ -104,7 +121,11 @@ public class JDBCTaskLogDAO implements DAO<TaskLog> {
 		taskLog.setId(result.getInt("id"));
 		taskLog.setTaskId(result.getInt("task_id"));
 		taskLog.setUserId(result.getInt("user_id"));
-		taskLog.setDurationInMinutes(result.getInt("duration_minutes"));
+		taskLog.setStartTime(result.getTimestamp("start_time").toLocalDateTime());
+		if (result.getTimestamp("end_time") != null) {
+			taskLog.setEndTime(result.getTimestamp("end_time").toLocalDateTime());
+			taskLog.setDurationInSeconds();
+		}
 		return taskLog;
 	}
 	

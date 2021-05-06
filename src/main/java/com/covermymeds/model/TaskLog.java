@@ -1,5 +1,8 @@
 package com.covermymeds.model;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import javax.validation.constraints.NotNull;
 
 public class TaskLog {
@@ -10,9 +13,25 @@ public class TaskLog {
 	private Integer taskId;
 	
 	private Integer userId;
+
+	private LocalDateTime startTime;
 	
-	@NotNull(message="durationInMinutes cannot be null")
-	private Integer durationInMinutes;
+	private LocalDateTime endTime;
+	
+	private Long durationInSeconds;
+
+	public Long getDurationInSeconds() {
+		return durationInSeconds;
+	}
+	
+	public void setDurationInSeconds() {
+		Long duration = null;
+		if (startTime != null && endTime != null) {
+			duration = Duration.between(startTime, endTime).toSeconds();
+			
+		}
+		this.durationInSeconds = duration;
+	}
 
 	public int getId() {
 		return id;
@@ -38,14 +57,21 @@ public class TaskLog {
 		this.userId = userId;
 	}
 
-	public Integer getDurationInMinutes() {
-		return durationInMinutes;
+	public LocalDateTime getEndTime() {
+		return endTime;
 	}
 
-	public void setDurationInMinutes(Integer durationInMinutes) {
-		this.durationInMinutes = durationInMinutes;
+	public void setEndTime(LocalDateTime endTime) {
+		this.endTime = endTime;
 	}
-	
+
+	public LocalDateTime getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(LocalDateTime startTime) {
+		this.startTime = startTime;
+	}
 	
 
 }
